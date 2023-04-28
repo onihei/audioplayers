@@ -7,10 +7,12 @@ import 'package:flutter/foundation.dart';
 class AudioContext {
   final AudioContextAndroid android;
   final AudioContextIOS iOS;
+  final dynamic web;
 
   const AudioContext({
     this.android = const AudioContextAndroid(),
     this.iOS = const AudioContextIOS(),
+    this.web = null,
   });
 
   AudioContext copy({

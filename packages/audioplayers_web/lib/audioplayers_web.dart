@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:audioplayers_platform_interface/audioplayers_platform_interface.dart';
 import 'package:audioplayers_web/global_audioplayers_web.dart';
 import 'package:audioplayers_web/num_extension.dart';
+import 'package:audioplayers_web/web_audio_js.dart';
 import 'package:audioplayers_web/wrapped_player.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
@@ -36,20 +38,20 @@ class WebAudioplayersPlatform extends AudioplayersPlatformInterface {
 
   @override
   Future<int?> getCurrentPosition(String playerId) async {
-    final position = getPlayer(playerId).player?.currentTime;
-    if (position == null) {
+    final currentTime = getPlayer(playerId).audioContext?.currentTime;
+    if (currentTime == null) {
       return null;
     }
-    return (position * 1000).toInt();
+    return (currentTime * 1000).toInt();
   }
 
   @override
   Future<int?> getDuration(String playerId) async {
-    final jsDuration = getPlayer(playerId).player?.duration;
-    if (jsDuration == null) {
+    final buffer =  await getPlayer(playerId).currentBuffer;
+    if (buffer == null) {
       return null;
     }
-    return jsDuration.fromSecondsToDuration().inMilliseconds;
+    return buffer.duration.fromSecondsToDuration().inMilliseconds;
   }
 
   @override
@@ -77,12 +79,7 @@ class WebAudioplayersPlatform extends AudioplayersPlatformInterface {
     String playerId,
     AudioContext audioContext,
   ) async {
-    getPlayer(playerId).eventStreamController.add(
-          const AudioEvent(
-            eventType: AudioEventType.log,
-            logMessage: 'Setting AudioContext is not supported on Web',
-          ),
-        );
+    getPlayer(playerId).setAudioContext(audioContext);
   }
 
   @override
@@ -95,7 +92,7 @@ class WebAudioplayersPlatform extends AudioplayersPlatformInterface {
 
   @override
   Future<void> setPlaybackRate(String playerId, double playbackRate) async {
-    getPlayer(playerId).playbackRate = playbackRate;
+    await getPlayer(playerId).setPlaybackRate(playbackRate);
   }
 
   @override
@@ -113,9 +110,8 @@ class WebAudioplayersPlatform extends AudioplayersPlatformInterface {
   }
 
   @override
-  Future<void> setSourceBytes(String playerId, Uint8List bytes) {
-    // TODO(luan): implement setSourceBytes for web
-    throw UnimplementedError();
+  Future<void> setSourceBytes(String playerId, Uint8List bytes) async {
+    getPlayer(playerId).setSourceBytes(bytes);
   }
 
   @override
